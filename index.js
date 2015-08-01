@@ -10,7 +10,7 @@ var sPostcode = "S6 5QL";
 var iMaxMiles = 100;
 var iMaxTime = 180;
 var iCalls = 0;
-var iMaxCalls = 5;
+var iMaxCalls = 10;
 
 var bJourneyCalls = false;
 var bDebug = false;
@@ -122,7 +122,7 @@ aProperties.forEach(function(oProperty) {
       var oResponce = JSON.parse(fs.readFileSync(sFileName).toString());
       if (bDebug) {console.log("From File "+sFileName);}
       displayJourney(oProperty, false, oResponce);
-  } else if (iCalls < iMaxCalls && bJourneyCalls) {    
+  } else if (iCalls < iMaxCalls) {    
     iCalls ++;
     
     geocoder.geocode(oProperty.search.replace("&", " "), function(err, res) {
@@ -140,40 +140,44 @@ aProperties.forEach(function(oProperty) {
         var iDist = distance(oPostCode.latitude, oPostCode.longitude, res[0].latitude, res[0].longitude, "M");
         //console.log("iDist =", iDist);
         if(iDist < iMaxMiles) {
-          console.log("Looking up Journey to ", oProperty.search);
-          var sFrom = "from/postcode:"+sPostcode.replace("", "+");
-          var sTo = "/to/lonlat:"+res[0].longitude+","+res[0].latitude;
-          var sURL = sURLBase+sFrom+sTo+sDateFrag+sAppCredintials;
-          if (bDebug) {console.log("sURL =", sURL);}
-          if (bDebug) {console.log("Saving to File "+sFileName);}
-          var http = require('http');
-          http.get(sURL,  function(response) {
-            var str = '';
-            if(response.statusCode === 200) {
-              //another chunk of data has been recieved, so append it to `str`
-              response.on('data', function (chunk) {
-                str += chunk;
+          if(bJourneyCalls) {
+            console.log("Looking up Journey to ", oProperty.search);
+            var sFrom = "from/postcode:"+sPostcode.replace("", "+");
+            var sTo = "/to/lonlat:"+res[0].longitude+","+res[0].latitude;
+            var sURL = sURLBase+sFrom+sTo+sDateFrag+sAppCredintials;
+            if (bDebug) {console.log("sURL =", sURL);}
+            if (bDebug) {console.log("Saving to File "+sFileName);}
+            var http = require('http');
+            http.get(sURL,  function(response) {
+              var str = '';
+              if(response.statusCode === 200) {
+                //another chunk of data has been recieved, so append it to `str`
+                response.on('data', function (chunk) {
+                  str += chunk;
+                });
+              
+                //the whole response has been recieved, so we just print it out here
+                response.on('end', function () {
+                  var oResponce = JSON.parse(str); 
+                  if(typeof oResponce.error !== "undefined") {
+                    console.log("Error ", oResponce.error);
+                  } else {
+                    fs.writeFileSync(sFileName, str);
+                    console.log("Saved to ",sFileName);
+                    displayJourney(oProperty, res[0], oResponce);
+                  }
+                });
+              } else {
+                console.log("response.statusCode =", response.statusCode);
+              }
+              
+              response.on('error', function(e) {
+                console.log("Got error: " + e.message);
               });
-            
-              //the whole response has been recieved, so we just print it out here
-              response.on('end', function () {
-                var oResponce = JSON.parse(str); 
-                if(typeof oResponce.error !== "undefined") {
-                  console.log("Error ", oResponce.error);
-                } else {
-                  fs.writeFileSync(sFileName, str);
-                  console.log("Saved to ",sFileName);
-                  displayJourney(oProperty, res[0], oResponce);
-                }
-              });
-            } else {
-              console.log("response.statusCode =", response.statusCode);
-            }
-            
-            response.on('error', function(e) {
-              console.log("Got error: " + e.message);
             });
-          });
+          } else {
+            iCalls --; //not sure this will work
+          }
         } else {
           aTooFar.push(oProperty.search);
           console.log(oProperty.search+" is too far at ", iDist);
