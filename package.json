@@ -1,0 +1,15 @@
+{
+  "name": "daytrip",
+  "version": "0.0.0",
+  "description": "Find English Heritage etc. sites near train stations",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Martyn Eggleton",
+  "license": "MIT",
+  "dependencies": {
+    "node-geocoder": "~2.22.0",
+    "moment": "~2.10.6"
+  }
+}
