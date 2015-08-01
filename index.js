@@ -1,21 +1,102 @@
 var fs = require("fs");
-var geocoderProvider = 'google';
 var httpAdapter = 'http';
-var geocoder = require('node-geocoder')(geocoderProvider, httpAdapter);//, extra);
 var moment = require("moment");
 
 var oEH = JSON.parse(fs.readFileSync("eh.json").toString());
 
-var sPostcode = "S6 5QL";
-var iMaxMiles = 100;
-var iMaxTime = 180;
-var iCalls = 0;
-var iMaxCalls = 10;
 
-var bJourneyCalls = false;
-var bDebug = false;
+var ArgumentParser = require('argparse').ArgumentParser;
+
+var parser = new ArgumentParser({
+  version: '0.0.1',
+  addHelp:true,
+  description: 'Day trip lister'
+});
+
+parser.addArgument(
+  [ '-p', '--postcode' ],
+  {
+    help: "Post Code",
+    defaultValue: "S6 5QL",
+    dest:"sPostcode"
+  }
+);
+
+parser.addArgument(
+  [ '-m', '--maxmiles' ],
+  {
+    help: "Maximum Miles",
+    defaultValue: 100,
+    dest:"iMaxMiles"
+  }
+);
+
+parser.addArgument(
+  [ '-t', '--maxtimes' ],
+  {
+    help: "Maximum Time in Minutes",
+    defaultValue: 180,
+    dest:"iMaxTime"
+  }
+);
+
+parser.addArgument(
+  [ '-c', '--maxcalls' ],
+  {
+    help: "Maximum number of Calls in a run",
+    defaultValue: 180,
+    dest:"iMaxCalls"
+  }
+);
+
+
+parser.addArgument(
+  [ '-g', '--geocoder' ],
+  {
+    help: "Geocoder Provider",
+    defaultValue: "google",
+    dest:"geocoderProvider"
+  }
+);
+
+parser.addArgument(
+  [ '-j', '--journeycall' ],
+  {
+    help: "Make the Journey planning calls",
+    action: 'storeTrue',
+    defaultValue: false,
+    dest:"bJourneyCalls"
+  }
+);
+
+
+parser.addArgument(
+  [ '-d', '--debug' ],
+  {
+    help: "Turn debugging on",
+    action: 'storeTrue',
+    defaultValue: false,
+    dest:"bDebug"
+  }
+);
+
+var options = parser.parseArgs();
+//console.log("options =", options);
+
+var geocoderProvider = options.geocoderProvider;//'google';
+var geocoder = require('node-geocoder')(geocoderProvider, httpAdapter);//, extra);
+
+var sPostcode = options.sPostcode;//"S6 5QL";
+var iMaxMiles = options.iMaxMiles;//100;
+var iMaxTime = options.iMaxTime;//180;
+var iMaxCalls = options.iMaxCalls;//10;
+
+var bJourneyCalls = options.bJourneyCalls;//false;
+var bDebug = options.bDebug;//false;
+
 var sCantLocateFile = "data/cant_locate_"+geocoderProvider+".json";
 var sPostcodeJSON = "data/"+sPostcode+".json";
+var iCalls = 0;
 
 var aCantLocate = [];
 if(fs.existsSync(sCantLocateFile)) {
@@ -137,52 +218,57 @@ aProperties.forEach(function(oProperty) {
         //console.log("aCantLocate =", aCantLocate);
         fs.writeFileSync(sCantLocateFile, JSON.stringify(aCantLocate, null, 4));
       } else {
-        var iDist = distance(oPostCode.latitude, oPostCode.longitude, res[0].latitude, res[0].longitude, "M");
-        //console.log("iDist =", iDist);
-        if(iDist < iMaxMiles) {
-          if(bJourneyCalls) {
-            console.log("Looking up Journey to ", oProperty.search);
-            var sFrom = "from/postcode:"+sPostcode.replace("", "+");
-            var sTo = "/to/lonlat:"+res[0].longitude+","+res[0].latitude;
-            var sURL = sURLBase+sFrom+sTo+sDateFrag+sAppCredintials;
-            if (bDebug) {console.log("sURL =", sURL);}
-            if (bDebug) {console.log("Saving to File "+sFileName);}
-            var http = require('http');
-            http.get(sURL,  function(response) {
-              var str = '';
-              if(response.statusCode === 200) {
-                //another chunk of data has been recieved, so append it to `str`
-                response.on('data', function (chunk) {
-                  str += chunk;
-                });
-              
-                //the whole response has been recieved, so we just print it out here
-                response.on('end', function () {
-                  var oResponce = JSON.parse(str); 
-                  if(typeof oResponce.error !== "undefined") {
-                    console.log("Error ", oResponce.error);
-                  } else {
-                    fs.writeFileSync(sFileName, str);
-                    console.log("Saved to ",sFileName);
-                    displayJourney(oProperty, res[0], oResponce);
-                  }
-                });
-              } else {
-                console.log("response.statusCode =", response.statusCode);
-              }
-              
-              response.on('error', function(e) {
-                console.log("Got error: " + e.message);
-              });
-            });
-          } else {
-            iCalls --; //not sure this will work
-          }
+        if(typeof res.raw !== "undefined" && typeof res.raw.error_message  !== "undefined") {
+          console.log(res.raw.error_message);
         } else {
-          aTooFar.push(oProperty.search);
-          console.log(oProperty.search+" is too far at ", iDist);
-          //console.log("aTooFar =", aTooFar);
-          fs.writeFileSync(sTooFarFile, JSON.stringify(aTooFar, null, 4));
+          var iDist = distance(oPostCode.latitude, oPostCode.longitude, res[0].latitude, res[0].longitude, "M");
+          
+          //console.log("iDist =", iDist);
+          if(iDist < iMaxMiles) {
+            if(bJourneyCalls) {
+              console.log("Looking up Journey to ", oProperty.search);
+              var sFrom = "from/postcode:"+sPostcode.replace("", "+");
+              var sTo = "/to/lonlat:"+res[0].longitude+","+res[0].latitude;
+              var sURL = sURLBase+sFrom+sTo+sDateFrag+sAppCredintials;
+              if (bDebug) {console.log("sURL =", sURL);}
+              if (bDebug) {console.log("Saving to File "+sFileName);}
+              var http = require('http');
+              http.get(sURL,  function(response) {
+                var str = '';
+                if(response.statusCode === 200) {
+                  //another chunk of data has been recieved, so append it to `str`
+                  response.on('data', function (chunk) {
+                    str += chunk;
+                  });
+                
+                  //the whole response has been recieved, so we just print it out here
+                  response.on('end', function () {
+                    var oResponce = JSON.parse(str); 
+                    if(typeof oResponce.error !== "undefined") {
+                      console.log("Error ", oResponce.error);
+                    } else {
+                      fs.writeFileSync(sFileName, str);
+                      console.log("Saved to ",sFileName);
+                      displayJourney(oProperty, res[0], oResponce);
+                    }
+                  });
+                } else {
+                  console.log("response.statusCode =", response.statusCode);
+                }
+                
+                response.on('error', function(e) {
+                  console.log("Got error: " + e.message);
+                });
+              });
+            } else {
+              iCalls --; //not sure this will work
+            }
+          } else {
+            aTooFar.push(oProperty.search);
+            console.log(oProperty.search+" is too far at ", iDist);
+            //console.log("aTooFar =", aTooFar);
+            fs.writeFileSync(sTooFarFile, JSON.stringify(aTooFar, null, 4));
+          }
         }
       }
     });
