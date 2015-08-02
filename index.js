@@ -262,14 +262,14 @@ aProperties.forEach(function(oProperty) {
                 });
               });
             } else {
-              iCalls --; //not sure this will work
+              //iCalls --; //not sure this will work
             }
           } else {
             aTooFar.push(oProperty.search);
             console.log(oProperty.search+" is too far at ", iDist);
             //console.log("aTooFar =", aTooFar);
             fs.writeFileSync(sTooFarFile, JSON.stringify(aTooFar, null, 4));
-            iCalls --; //not sure this will work
+            //iCalls --; //not sure this will work
           }
         }
       }
