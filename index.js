@@ -22,6 +22,17 @@ parser.addArgument(
   }
 );
 
+
+parser.addArgument(
+  [ '-r', '--ruins' ],
+  {
+    help: "Include Ruins",
+    action: 'storeTrue',
+    defaultValue: false,
+    dest:"bIncludeRuins"
+  }
+);
+
 parser.addArgument(
   [ '-m', '--maxmiles' ],
   {
@@ -163,9 +174,9 @@ aProperties = aProperties.filter(function(oProperty){
 
 
 aProperties = aProperties.filter(function(oProperty){
-   if (typeof oProperty.condition !== "undefined") {
+   if (!options.bIncludeRuins && typeof oProperty.condition !== "undefined") {
       if(oProperty.condition === "Ruins") {
-        //return false;
+        return false;
       }
    }
    
@@ -178,14 +189,6 @@ aProperties = aProperties.filter(function(oProperty){
    }
    
    return true;
-   if(oProperty["type/_text"] === "Castle" 
-     || oProperty["type/_text"] === "Village"
-     || oProperty["type/_text"] === "Country House"
-     || oProperty["type/_title"] === "Castra"
-     ) {
-     return true;
-   }
-   return false;
 });
 
 console.log("aProperties =", aProperties.length);
@@ -280,14 +283,16 @@ aProperties.forEach(function(oProperty) {
 
 function displayJourney(oProperty, oLocation, oJourney){
   if(oJourney.routes.length > 0) {
-    var aDurations = oJourney.routes.map(function(oRoute){
+    var aDurations = oJourney.routes.filter(function(oRoute){
+        return oRoute.route_parts[0].mode !== "taxi";
+    }).map(function(oRoute){
         return oRoute.duration;
     });
     var aSorted = aDurations.sort();
     var aDur = aSorted[0].split(":");
     var iMins = (parseInt(aDur[0])*60) + parseInt(aDur[1]);
     if(iMins < iMaxTime) {
-      console.log(oProperty.search+ " takes " + aDurations.join(", "));
+      console.log(oProperty.search+ " ("+oProperty["type/_text"]+") takes " + aDurations[0]+ "-"+aDurations[aDurations.length - 1]);
     }
   } else {
     if(bDebug) {console.log("No Journey to "+oProperty.search);}
