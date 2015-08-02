@@ -163,9 +163,10 @@ aProperties = aProperties.filter(function(oProperty){
 
 
 aProperties = aProperties.filter(function(oProperty){
-   if (typeof oProperty.condition !== "undefined")
-    if(oProperty.condition === "Ruins") {
-     return false;
+   if (typeof oProperty.condition !== "undefined") {
+      if(oProperty.condition === "Ruins") {
+        //return false;
+      }
    }
    
    if(aCantLocate.indexOf(oProperty.search) !== -1){
@@ -268,6 +269,7 @@ aProperties.forEach(function(oProperty) {
             console.log(oProperty.search+" is too far at ", iDist);
             //console.log("aTooFar =", aTooFar);
             fs.writeFileSync(sTooFarFile, JSON.stringify(aTooFar, null, 4));
+            iCalls --; //not sure this will work
           }
         }
       }
