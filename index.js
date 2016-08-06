@@ -52,6 +52,18 @@ var sPostcodeJSON = ("data/"+safeBaseName(options.postcode)+".json");
 var iCalls = 0;
 var iJCalls = 0;        
 
+if(!fs.existsSync("data/")) {
+  fs.mkdirSync("data/");
+}
+
+if(!fs.existsSync("journey_plans/")) {
+  fs.mkdirSync("journey_plans/");
+}
+
+if(!fs.existsSync("journey_summaries/")) {
+  fs.mkdirSync("journey_summaries/");
+}
+
 var aCantLocate = [];
 if(fs.existsSync(sCantLocateFile)) {
   aCantLocate = JSON.parse(fs.readFileSync(sCantLocateFile).toString());
@@ -300,7 +312,7 @@ function displayJourney(oProperty, oLocation, oJourney, sPostcode){
       });
       var oSummary = new Object(oJourney);
       oSummary.routes = aRoutes;
-      var sFileName = "journey_summary/"+(sPostcode).replace(/[\/\:\+\,]/g,"_")+"_"+oProperty.filefrag+".json";
+      var sFileName = "journey_summaries/"+(sPostcode).replace(/[\/\:\+\,]/g,"_")+"_"+oProperty.filefrag+".json";
       fs.writeFileSync(sFileName, JSON.stringify(oSummary, null, 4));
     }
   } else {
