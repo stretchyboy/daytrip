@@ -9,8 +9,8 @@
   "author": "Martyn Eggleton",
   "license": "MIT",
   "dependencies": {
-    "node-geocoder": "~2.22.0",
-    "moment": "~2.10.6",
-    "argparse": "~1.0.2"
+    "argparse": "~1.0.2",
+    "moment": "^2.21.0",
+    "node-geocoder": "~2.22.0"
   }
 }
