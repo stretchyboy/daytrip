@@ -1,16 +1,23 @@
 {
   "name": "daytrip",
   "version": "0.0.0",
-  "description": "Find English Heritage etc. sites near train stations",
-  "main": "index.js",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "webpack && node server.js"
   },
-  "author": "Martyn Eggleton",
-  "license": "MIT",
   "dependencies": {
-    "argparse": "~1.0.2",
-    "moment": "^2.21.0",
-    "node-geocoder": "~2.22.0"
+    "bootstrap": "^4.1.3",
+    "cookie-parser": "~1.4.3",
+    "css-loader": "^1.0.0",
+    "debug": "~2.6.9",
+    "ejs": "~2.5.7",
+    "express": "~4.16.0",
+    "express-http-proxy": "^1.2.0",
+    "http-errors": "~1.6.2",
+    "jquery": "^3.3.1",
+    "mini-css-extract-plugin": "^0.4.1",
+    "morgan": "~1.9.0",
+    "webpack": "^4.16.4",
+    "webpack-cli": "^3.1.0"
   }
 }
